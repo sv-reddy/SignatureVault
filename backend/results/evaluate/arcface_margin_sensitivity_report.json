@@ -1,0 +1,35 @@
+{
+  "source": "E:\\Major Project\\SignatureVault\\backend\\results\\evaluate\\margin_sensitivity.json",
+  "chart": "E:\\Major Project\\SignatureVault\\backend\\results\\evaluate\\arcface_margin_sensitivity.png",
+  "table": "E:\\Major Project\\SignatureVault\\backend\\results\\evaluate\\arcface_margin_sensitivity_table.tex",
+  "margins": [
+    {
+      "margin": 0.35,
+      "accuracy": 0.9031,
+      "eer": 0.0945,
+      "precision": 0.84,
+      "f1": 0.87
+    },
+    {
+      "margin": 0.45,
+      "accuracy": 0.9188,
+      "eer": 0.081,
+      "precision": 0.85,
+      "f1": 0.88
+    },
+    {
+      "margin": 0.55,
+      "accuracy": 0.9272,
+      "eer": 0.0728,
+      "precision": 0.8642,
+      "f1": 0.8946
+    },
+    {
+      "margin": 0.65,
+      "accuracy": 0.921,
+      "eer": 0.0793,
+      "precision": 0.856,
+      "f1": 0.887
+    }
+  ]
+}

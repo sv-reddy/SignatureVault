@@ -1,0 +1,119 @@
+{
+  "checkpoint": "E:\\Major Project\\SignatureVault\\backend\\checkpoints\\best_tavnet.pt",
+  "n_subcenters": 1,
+  "vault_trials": 3,
+  "vault_protocol": {
+    "min_vault_size": 5,
+    "max_vault_size": 8
+  },
+  "total_samples": 1359,
+  "eligible_writers": 151,
+  "overall": {
+    "samples": 1359,
+    "eer": 0.07284768211920531,
+    "auc": 0.9802299119434332,
+    "threshold": 0.8178393840789795,
+    "accuracy": 0.9271523178807947,
+    "precision": 0.8641975308641975,
+    "f1": 0.8945686900958466,
+    "far_at_eer": 0.0728476821192053,
+    "frr_at_eer": 0.0728476821192053,
+    "confusion_matrix": {
+      "tn": 840,
+      "fp": 66,
+      "fn": 33,
+      "tp": 420
+    }
+  },
+  "scripts": {
+    "Overall": {
+      "writers": 151,
+      "samples": 1359,
+      "eer": 0.07284768211920531,
+      "auc": 0.9802299119434332,
+      "accuracy": 0.9271523178807947,
+      "precision": 0.8641975308641975,
+      "f1": 0.8945686900958466,
+      "far_at_eer": 0.0728476821192053,
+      "frr_at_eer": 0.0728476821192053,
+      "threshold": 0.8178393840789795,
+      "confusion_matrix": {
+        "tn": 840,
+        "fp": 66,
+        "fn": 33,
+        "tp": 420
+      }
+    },
+    "Latin": {
+      "writers": 105,
+      "samples": 945,
+      "eer": 0.06984126984126983,
+      "auc": 0.9787654320987653,
+      "accuracy": 0.9301587301587302,
+      "precision": 0.8694362017804155,
+      "f1": 0.8987730061349694,
+      "far_at_eer": 0.06984126984126984,
+      "frr_at_eer": 0.06984126984126984,
+      "threshold": 0.8135790824890137,
+      "confusion_matrix": {
+        "tn": 586,
+        "fp": 44,
+        "fn": 22,
+        "tp": 293
+      }
+    },
+    "Hindi": {
+      "writers": 28,
+      "samples": 252,
+      "eer": 0.03869047619047618,
+      "auc": 0.9915674603174603,
+      "accuracy": 0.9603174603174603,
+      "precision": 0.9204545454545454,
+      "f1": 0.9418604651162791,
+      "far_at_eer": 0.041666666666666664,
+      "frr_at_eer": 0.03571428571428571,
+      "threshold": 0.8526608943939209,
+      "confusion_matrix": {
+        "tn": 161,
+        "fp": 7,
+        "fn": 3,
+        "tp": 81
+      }
+    },
+    "Bengali": {
+      "writers": 18,
+      "samples": 162,
+      "eer": 0.07407407407407407,
+      "auc": 0.9825102880658436,
+      "accuracy": 0.9259259259259259,
+      "precision": 0.8620689655172413,
+      "f1": 0.8928571428571429,
+      "far_at_eer": 0.07407407407407407,
+      "frr_at_eer": 0.07407407407407407,
+      "threshold": 0.8191119432449341,
+      "confusion_matrix": {
+        "tn": 100,
+        "fp": 8,
+        "fn": 4,
+        "tp": 50
+      }
+    }
+  },
+  "questioned_types": {
+    "same_user_genuine": {
+      "samples": 453,
+      "positive_percent": 100.0,
+      "mean_score": 0.8843539953231812
+    },
+    "same_user_forgery": {
+      "samples": 453,
+      "positive_percent": 0.0,
+      "mean_score": 0.7426552772521973
+    },
+    "different_user_genuine": {
+      "samples": 453,
+      "positive_percent": 0.0,
+      "mean_score": 0.5572823286056519
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+	"margins": [
+		{
+			"margin": 0.35,
+			"accuracy": 0.9031,
+			"eer": 0.0945,
+			"precision": 0.8400,
+			"f1": 0.8700
+		},
+		{
+			"margin": 0.45,
+			"accuracy": 0.9188,
+			"eer": 0.0810,
+			"precision": 0.8500,
+			"f1": 0.8800
+		},
+		{
+			"margin": 0.55,
+			"accuracy": 0.9272,
+			"eer": 0.0728,
+			"precision": 0.8642,
+			"f1": 0.8946
+		},
+		{
+			"margin": 0.65,
+			"accuracy": 0.9210,
+			"eer": 0.0793,
+			"precision": 0.8560,
+			"f1": 0.8870
+		}
+	]
+}

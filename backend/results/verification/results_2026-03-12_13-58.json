@@ -1,0 +1,182 @@
+[
+    {
+        "questioned_file": "12.jpeg",
+        "centroid_sim": 0.7014,
+        "subcenter_sim": 0.751,
+        "median_sim": 0.5223,
+        "min_sim": 0.4091,
+        "combined_score": 0.6694,
+        "similarity_score": 0.6694,
+        "vault_mean": 0.6349,
+        "vault_std": 0.0826,
+        "z_score": 0.4181,
+        "z_threshold": -1.0,
+        "verdict": "GENUINE",
+        "n_subcenters": 3,
+        "pairwise_scores": [
+            {
+                "ref_file": "1.jpeg",
+                "score": 0.7287
+            },
+            {
+                "ref_file": "2.jpeg",
+                "score": 0.4091
+            },
+            {
+                "ref_file": "3.jpeg",
+                "score": 0.5486
+            },
+            {
+                "ref_file": "4.jpeg",
+                "score": 0.6958
+            },
+            {
+                "ref_file": "5.jpeg",
+                "score": 0.5223
+            },
+            {
+                "ref_file": "6.jpeg",
+                "score": 0.4603
+            },
+            {
+                "ref_file": "7.jpeg",
+                "score": 0.4164
+            }
+        ]
+    },
+    {
+        "questioned_file": "13.jpeg",
+        "centroid_sim": 0.2767,
+        "subcenter_sim": 0.2693,
+        "median_sim": 0.2594,
+        "min_sim": 0.0067,
+        "combined_score": 0.2579,
+        "similarity_score": 0.2579,
+        "vault_mean": 0.6349,
+        "vault_std": 0.0826,
+        "z_score": -4.5625,
+        "z_threshold": -1.0,
+        "verdict": "FORGERY",
+        "n_subcenters": 3,
+        "pairwise_scores": [
+            {
+                "ref_file": "1.jpeg",
+                "score": 0.2734
+            },
+            {
+                "ref_file": "2.jpeg",
+                "score": 0.2594
+            },
+            {
+                "ref_file": "3.jpeg",
+                "score": 0.2794
+            },
+            {
+                "ref_file": "4.jpeg",
+                "score": 0.2384
+            },
+            {
+                "ref_file": "5.jpeg",
+                "score": 0.1649
+            },
+            {
+                "ref_file": "6.jpeg",
+                "score": 0.0067
+            },
+            {
+                "ref_file": "7.jpeg",
+                "score": 0.2693
+            }
+        ]
+    },
+    {
+        "questioned_file": "14.jpeg",
+        "centroid_sim": 0.7514,
+        "subcenter_sim": 0.7264,
+        "median_sim": 0.5969,
+        "min_sim": 0.3873,
+        "combined_score": 0.6979,
+        "similarity_score": 0.6979,
+        "vault_mean": 0.6349,
+        "vault_std": 0.0826,
+        "z_score": 0.7624,
+        "z_threshold": -1.0,
+        "verdict": "GENUINE",
+        "n_subcenters": 3,
+        "pairwise_scores": [
+            {
+                "ref_file": "1.jpeg",
+                "score": 0.5579
+            },
+            {
+                "ref_file": "2.jpeg",
+                "score": 0.5969
+            },
+            {
+                "ref_file": "3.jpeg",
+                "score": 0.7517
+            },
+            {
+                "ref_file": "4.jpeg",
+                "score": 0.6569
+            },
+            {
+                "ref_file": "5.jpeg",
+                "score": 0.6246
+            },
+            {
+                "ref_file": "6.jpeg",
+                "score": 0.3873
+            },
+            {
+                "ref_file": "7.jpeg",
+                "score": 0.4751
+            }
+        ]
+    },
+    {
+        "questioned_file": "15.jpeg",
+        "centroid_sim": 0.7528,
+        "subcenter_sim": 0.7259,
+        "median_sim": 0.5536,
+        "min_sim": 0.4431,
+        "combined_score": 0.6934,
+        "similarity_score": 0.6934,
+        "vault_mean": 0.6349,
+        "vault_std": 0.0826,
+        "z_score": 0.7081,
+        "z_threshold": -1.0,
+        "verdict": "GENUINE",
+        "n_subcenters": 3,
+        "pairwise_scores": [
+            {
+                "ref_file": "1.jpeg",
+                "score": 0.4715
+            },
+            {
+                "ref_file": "2.jpeg",
+                "score": 0.6043
+            },
+            {
+                "ref_file": "3.jpeg",
+                "score": 0.774
+            },
+            {
+                "ref_file": "4.jpeg",
+                "score": 0.6634
+            },
+            {
+                "ref_file": "5.jpeg",
+                "score": 0.5484
+            },
+            {
+                "ref_file": "6.jpeg",
+                "score": 0.4431
+            },
+            {
+                "ref_file": "7.jpeg",
+                "score": 0.5536
+            }
+        ]
+    }
+]

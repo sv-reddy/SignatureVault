@@ -1,0 +1,125 @@
+(.venv) PS E:\Major Project\SignatureVault\backend> python ablation_study/train_tavnet_arch_ablation.py --variant all --epochs 10
+INFO     Device: cuda
+INFO     Using processed tensors: E:\Major Project\SignatureVault\DATA\process_data
+INFO     Reusing architectural-ablation split manifest: E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\manifest.json
+INFO     Split writers -> train=526 val=75 test=151
+INFO     
+[Variant resnet] ResNet-50 | cbam=False transformer=False
+INFO     [Variant resnet] train_writers=526 val_writers=75
+
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+Epoch  trn_loss  val_loss  val_EER  Forg_EER  Rand_EER  Pos_Dist  Neg_Dist   TAR@.8          LR  Best
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+    1   41.9228    0.9302   15.37%    15.28%    15.43%    0.9577    1.1762    5.39%    1.00e-04  ✅
+          ↳ epoch_time=96.3s
+    2   41.5732    0.9376   19.12%    19.74%    18.80%    0.8988    1.1040    4.66%    1.00e-04                                  
+          ↳ epoch_time=81.9s
+    3   41.2026    0.9330   15.35%    15.96%    15.18%    0.8491    1.1206    6.71%    1.00e-04  ✅                              
+          ↳ epoch_time=64.1s
+    4   40.8804    0.9361   13.65%    13.44%    13.80%    0.7985    1.1016    6.02%    1.00e-04  ✅                              
+          ↳ epoch_time=63.6s
+    5   40.5371    0.9415   13.10%    13.44%    12.58%    0.7722    1.1105    7.99%    1.00e-04  ✅                              
+          ↳ epoch_time=63.8s
+    6   40.1704    0.9438   12.00%    12.32%    11.85%    0.7617    1.1731   10.87%    1.00e-04  ✅                              
+          ↳ epoch_time=64.1s
+    7   39.8011    0.9405   11.86%    12.01%    11.76%    0.6976    1.1727   26.93%    1.00e-04  ✅                              
+          ↳ epoch_time=64.1s
+    8   39.3391    0.9353   10.58%    10.76%    10.41%    0.7229    1.2562   22.06%    1.00e-04  ✅                              
+          ↳ epoch_time=64.5s
+    9   38.8637    0.9505    9.51%     9.66%     9.35%    0.7334    1.3203   22.70%    1.00e-04  ✅                              
+          ↳ epoch_time=64.0s
+   10   38.1952    0.9379    8.73%     8.57%     8.86%    0.7236    1.3311   24.77%    1.00e-04  ✅                              
+          ↳ epoch_time=63.6s
+INFO     [Variant resnet] Best val EER: 0.0873 (8.73%)
+INFO     [Variant resnet] Checkpoint: E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet\best_tavnet_resnet.pt
+INFO     
+[Variant resnet_cbam] ResNet-50 + CBAM | cbam=True transformer=False
+INFO     [Variant resnet_cbam] train_writers=526 val_writers=75
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+Epoch  trn_loss  val_loss  val_EER  Forg_EER  Rand_EER  Pos_Dist  Neg_Dist   TAR@.8          LR  Best
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+    1   41.9895    0.9557   18.86%    18.83%    18.73%    1.0830    1.2928    4.18%    1.00e-04  ✅                              
+          ↳ epoch_time=69.3s
+    2   41.6818    0.9765   18.58%    18.84%    18.33%    1.0471    1.2865    4.57%    1.00e-04  ✅                              
+          ↳ epoch_time=64.7s
+    3   41.3010    0.9975   18.80%    19.05%    18.58%    0.9898    1.2657    4.21%    1.00e-04                                  
+          ↳ epoch_time=65.7s
+    4   40.9287    1.0267   19.63%    19.78%    19.56%    0.9208    1.2521    5.40%    1.00e-04                                  
+          ↳ epoch_time=65.4s
+    5   40.5488    1.0181   17.62%    17.65%    17.41%    0.8237    1.2315   12.07%    1.00e-04  ✅                              
+          ↳ epoch_time=65.9s
+    6   40.2482    1.0120   15.77%    16.08%    15.53%    0.7858    1.2524   19.04%    1.00e-04  ✅                              
+          ↳ epoch_time=65.0s
+    7   39.8956    1.0095   14.44%    14.79%    14.02%    0.7518    1.2598   24.77%    1.00e-04  ✅                              
+          ↳ epoch_time=65.2s
+    8   39.5114    1.0181   15.22%    15.42%    15.11%    0.7675    1.2884   21.39%    1.00e-04                                  
+          ↳ epoch_time=65.1s
+    9   39.0525    1.0056   14.87%    15.02%    14.73%    0.7317    1.3159   33.39%    1.00e-04                                  
+          ↳ epoch_time=65.0s
+   10   38.5032    1.0025   12.57%    12.63%    12.69%    0.7628    1.3365   22.79%    1.00e-04  ✅                              
+          ↳ epoch_time=65.4s
+INFO     [Variant resnet_cbam] Best val EER: 0.1257 (12.57%)
+INFO     [Variant resnet_cbam] Checkpoint: E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet_cbam\best_tavnet_resnet_cbam.pt
+INFO     
+[Variant resnet_transformer] ResNet-50 + Transformer | cbam=False transformer=True
+INFO     [Variant resnet_transformer] train_writers=526 val_writers=75
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+Epoch  trn_loss  val_loss  val_EER  Forg_EER  Rand_EER  Pos_Dist  Neg_Dist   TAR@.8          LR  Best
+───────────────────────────────────────────────────────────────────────────────────────────────────────
+    1   42.0082    0.9386   17.84%    18.38%    17.43%    0.9961    1.1980    3.78%    1.00e-04  ✅                              
+          ↳ epoch_time=76.5s
+    2   41.6022    0.9429   18.21%    18.79%    17.83%    0.9552    1.1652    3.06%    1.00e-04                                  
+          ↳ epoch_time=76.4s
+    3   41.1252    0.9483   17.47%    17.70%    17.60%    0.8596    1.1268    4.06%    1.00e-04  ✅                              
+          ↳ epoch_time=76.6s
+    4   40.7757    0.9497   14.52%    14.96%    13.92%    0.7772    1.1132    7.11%    1.00e-04  ✅                              
+          ↳ epoch_time=76.4s
+    5   40.4278    0.9519   14.54%    15.16%    14.02%    0.7152    1.1346   22.90%    1.00e-04                                  
+          ↳ epoch_time=76.1s
+    6   40.1037    0.9605   13.26%    13.84%    12.78%    0.6795    1.1640   36.36%    1.00e-04  ✅                              
+          ↳ epoch_time=77.1s
+    7   39.6909    0.9472   11.60%    11.84%    11.39%    0.6759    1.2126   33.55%    1.00e-04  ✅                              
+          ↳ epoch_time=76.5s
+    8   39.2900    0.9400   10.35%    10.70%     9.73%    0.6762    1.2599   36.03%    1.00e-04  ✅
+          ↳ epoch_time=76.7s
+    9   38.7186    0.9472    8.55%     8.60%     8.60%    0.7087    1.3080   27.48%    1.00e-04  ✅                              
+          ↳ epoch_time=76.8s
+   10   38.1390    0.9316    8.14%     8.20%     8.10%    0.7087    1.3279   27.78%    1.00e-04  ✅                              
+          ↳ epoch_time=76.6s
+INFO     [Variant resnet_transformer] Best val EER: 0.0814 (8.14%)
+INFO     [Variant resnet_transformer] Checkpoint: E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet_transformer\best_tavnet_resnet_transformer.pt
+
+Architectural ablation run complete.
+  resnet             best_val_eer=0.0873 label=ResNet-50
+  resnet_cbam        best_val_eer=0.1257 label=ResNet-50 + CBAM
+  resnet_transformer best_val_eer=0.0814 label=ResNet-50 + Transformer
+Summary saved -> E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\arch_ablation_summary.json
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(.venv) PS E:\Major Project\SignatureVault\backend> py ablation_study/evaluate_tavnet_arch_ablation.py --variant all --vault-trials 3 
+INFO     Evaluating variant=resnet checkpoint=E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet\best_tavnet_resnet.pt
+Embed resnet: 100%|████████████████████████████████████████████████████████████████████████| 664/664 [01:51<00:00,  5.96batch/s]
+INFO     Evaluating variant=resnet_cbam checkpoint=E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet_cbam\best_tavnet_resnet_cbam.pt
+Embed resnet_cbam: 100%|███████████████████████████████████████████████████████████████████| 664/664 [01:51<00:00,  5.95batch/s]
+INFO     Evaluating variant=resnet_transformer checkpoint=E:\Major Project\SignatureVault\backend\checkpoints\arch_ablation\resnet_transformer\best_tavnet_resnet_transformer.pt
+Embed resnet_transformer: 100%|████████████████████████████████████████████████████████████| 664/664 [02:02<00:00,  5.41batch/s]
+
+Architecture ablation evaluation complete
+Saved JSON report: E:\Major Project\SignatureVault\backend\results\evaluate\arch_ablation_report.json
+Saved LaTeX table snippets: E:\Major Project\SignatureVault\backend\results\evaluate\arch_ablation_table.tex
+Saved LaTeX table snippets: E:\Major Project\SignatureVault\backend\results\evaluate\dataset_breakdown_table.tex
