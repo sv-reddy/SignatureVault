@@ -338,6 +338,8 @@ def main():
                         help="Path to questioned signature image or folder")
     parser.add_argument("--checkpoint",   type=str, default=DEFAULT_CHECKPOINT,
                         help="Path to model checkpoint")
+    parser.add_argument("--json-stdout", action="store_true",
+                        help="Print final structured JSON payload to stdout")
     args = parser.parse_args()
 
     vault_path      = Path(args.vault).resolve()
@@ -346,6 +348,8 @@ def main():
 
     if not vault_path.is_dir():
         logger.error(f"Vault path is not a directory: {vault_path}")
+        if args.json_stdout:
+            print(json.dumps({"error": f"Vault path is not a directory: {vault_path}"}))
         return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -378,6 +382,8 @@ def main():
 
         if not q_files:
             logger.error(f"No valid questioned signatures found at {q_path}")
+            if args.json_stdout:
+                print(json.dumps({"error": f"No valid questioned signatures found at {q_path}"}))
             return
 
         all_results = []
@@ -406,9 +412,18 @@ def main():
             json.dump(all_results, f, indent=4)
         logger.info(f"Results saved to {save_path}")
 
+        if args.json_stdout:
+            print(json.dumps({
+                "results": all_results,
+                "results_file": str(save_path),
+                "vault_size": len(named_embs),
+            }))
+
     except Exception:
         logger.error("Verification failed!")
         logger.error(traceback.format_exc())
+        if args.json_stdout:
+            print(json.dumps({"error": "Verification failed", "trace": traceback.format_exc()}))
 
 
 if __name__ == "__main__":

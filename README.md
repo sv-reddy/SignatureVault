@@ -1,35 +1,44 @@
-# SignatureVault
+`# SignatureVault
 
-**Offline Handwritten Signature Verification System**
+**Offline Handwritten Signature Verification System with Forensic Explainability**
 
-SignatureVault is an end-to-end deep-learning pipeline for verifying handwritten signatures. It unifies multiple public datasets, extracts a rich 4-channel biometric feature representation, trains a Siamese-Transformer model (TAV-Net), verifies questioned signatures against a personal vault of genuine references, and produces explainability dashboards via Grad-CAM backbone attention heatmaps.
+SignatureVault is a comprehensive end-to-end deep-learning system for verifying handwritten signatures with full forensic explainability. It unifies multiple public datasets, extracts a rich 4-channel biometric feature representation, trains a Siamese-Transformer model (TAV-Net), verifies questioned signatures against a personal vault of genuine references via adaptive Z-score thresholding, and produces explainability dashboards via Grad-CAM backbone attention heatmaps. The project includes both a Python backend for ML operations and a React/Vite frontend with an Express.js API wrapper for interactive deployment.
 
 ---
 
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [End-to-End Workflow Summary](#2-end-to-end-workflow-summary)
-3. [Architecture](#3-architecture)
+2. [Full System Architecture](#2-full-system-architecture)
+3. [End-to-End Workflow Summary](#3-end-to-end-workflow-summary)
 4. [Repository Structure](#4-repository-structure)
 5. [Datasets](#5-datasets)
-6. [Pipeline — Step by Step](#6-pipeline--step-by-step)
+6. [Backend Pipeline — Step by Step](#6-backend-pipeline--step-by-step)
    - [Step 1 — Unify Datasets](#step-1--unify-datasets-unify_datasetpy)
    - [Step 2 — Extract Features](#step-2--extract-features-extract_featurespy)
    - [Step 3 — Train TAV-Net](#step-3--train-tav-net-train_tavnetpy)
    - [Step 4 — Evaluate](#step-4--evaluate-evaluate_tavnetpy)
    - [Step 5 — Verify](#step-5--verify-verify_vaultpy)
-    - [Step 6 — Forensic Explainability Report](#step-6--forensic-explainability-report-grad_campy)
+   - [Step 6 — Forensic Explainability Report](#step-6--forensic-explainability-report-grad_campy)
    - [Auxiliary: Feature Visualization](#auxiliary-tool--feature-visualization-visualize_featurespy)
    - [Auxiliary: Cleaning Validation](#auxiliary-tool--cleaning-validation-check_image_cleaningpy)
-7. [Model — TAV-Net](#7-model--tav-net)
-8. [Scoring System](#8-scoring-system)
-9. [Installation](#9-installation)
-10. [Recent Optimizations & Improvements](#recent-optimizations--improvements)
-11. [Quick Start](#11-quick-start)
-12. [Configuration Reference](#12-configuration-reference)
-13. [Output Files](#13-output-files)
-14. [Dependencies](#14-dependencies)
+7. [TAV-Net Model Architecture](#7-model--tav-net)
+8. [Adaptive Scoring System](#8-scoring-system)
+9. [Frontend Application](#9-frontend-application)
+   - [React Components & Pages](#frontend-components)
+   - [User Interface Design](#ui-design)
+   - [Frontend Installation & Development](#frontend-installation)
+10. [API Wrapper (Express.js Backend)](#10-api-wrapper-expressjs-backend)
+    - [API Endpoints](#api-endpoints)
+    - [Job Management System](#job-management)
+    - [File Upload Handling](#file-upload-handling)
+11. [Full System Installation & Deployment](#11-full-system-installation--deployment)
+12. [Running the Complete Stack](#12-running-the-complete-stack)
+13. [Backend Configuration Reference](#13-backend-configuration-reference)
+14. [Recent Optimizations & Improvements](#14-recent-optimizations--improvements)
+15. [Quick Start Guide](#15-quick-start-guide)
+16. [Output Files & Results](#16-output-files--results)
+17. [Dependencies & Requirements](#17-dependencies--requirements)
 
 ---
 
@@ -47,7 +56,48 @@ Signature verification is a critical part of document authentication in banking,
 
 ---
 
-## 2. End-to-End Workflow Summary
+## 2. Full System Architecture
+
+SignatureVault is a **full-stack application** with three integrated layers:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Frontend Layer (React + Vite)                                  │
+│  ├── HomePage: Initial vault + questioned image upload          │
+│  ├── AnalysisPage: Real-time job progress polling              │
+│  └── ResultPage: Verdict display, metrics, Grad-CAM gallery    │
+│  URL: http://localhost:5173 (development)                       │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ HTTP/JSON
+┌──────────────────────▼──────────────────────────────────────────┐
+│  API Wrapper Layer (Express.js on Node.js)                      │
+│  ├── POST /analyze          → run verification job              │
+│  ├── GET  /progress/:jobId  → fetch job status                 │
+│  ├── GET  /result/:jobId    → retrieve final result JSON       │
+│  ├── GET  /static/*         → serve visualizations (PNG/HTML)  │
+│  └── File upload + temp job management (multipart/form-data)   │
+│  URL: http://localhost:5000 (development)                       │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ Python subprocess (spawn)
+┌──────────────────────▼──────────────────────────────────────────┐
+│  Backend ML Pipeline (Python)                                   │
+│  ├── Feature Extraction: (4, 384, 384) tensor per image        │
+│  ├── TAV-Net Inference: Embedding computation                   │
+│  ├── Vault Scoring: Adaptive Z-score thresholding               │
+│  └── Grad-CAM Report Generation: Forensic explainability       │
+│  Working directory: backend/                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Data flow for a single verification:**
+1. User uploads vault images (5+) and one questioned image via **Frontend**.
+2. Frontend sends multipart form data to **API Wrapper** `/analyze` endpoint.
+3. API Wrapper creates unique job ID, saves uploaded files to `backend/tmp/api_jobs/{jobId}/`, and spawns Python subprocess (`verify_vault.py` → `grad_cam.py`).
+4. Python backend processes images: extract features, compute embeddings, run verification, generate Grad-CAM report.
+5. Results saved to `backend/results/verification/` and `backend/results/grad_cam/`.
+6. Frontend polls `/progress/:jobId` for real-time updates, then displays `/result/:jobId` with embedded images.
+
+---
 
 This is the full project flow from raw datasets to final analysis outputs.
 
@@ -65,7 +115,7 @@ This is the full project flow from raw datasets to final analysis outputs.
 
 ## 3. Architecture
 
-```
+This section describes the technical architecture of TAV-Net and preprocessing pipeline.
 Input image (any size, any color)
         │
         ▼
@@ -197,7 +247,7 @@ The exact split is recorded in `checkpoints/manifest.json` at training time, ens
 
 ---
 
-## 6. Pipeline — Step by Step
+## 6. Backend Pipeline — Step by Step
 
 ### Step 1 — Unify Datasets (`unify_dataset.py`)
 
@@ -599,7 +649,7 @@ python check_image_cleaning.py --file-name "sample_check/questioned/12.jpeg"
 
 ---
 
-## 7. Model — TAV-Net
+## 7. TAV-Net Model Architecture
 
 ```
 TAVNet(embed_dim=512)
@@ -634,7 +684,7 @@ TAVNet(embed_dim=512)
 
 ---
 
-## 8. Scoring System
+## 8. Adaptive Scoring System
 
 The verification scoring system is designed around two principles:
 
@@ -646,7 +696,515 @@ The verification scoring system is designed around two principles:
 
 ---
 
-## 9. Installation
+## 9. Frontend Application
+
+SignatureVault includes a modern React-based web interface for interactive signature verification. The frontend is built with Vite for fast HMR development and production-optimized builds.
+
+### Frontend Structure
+
+```
+frontend/
+├── package.json              # React + Vite dependencies
+├── src/
+│   ├── main.jsx             # Vite entry point
+│   ├── App.jsx              # Root component with state management
+│   ├── api.js               # API client (HTTP requests to backend)
+│   ├── styles.css           # Global stylesheet
+│   ├── pages/
+│   │   ├── HomePage.jsx     # Initial upload screen
+│   │   ├── AnalysisPage.jsx # Real-time progress tracking
+│   │   └── ResultPage.jsx   # Results display & Grad-CAM gallery
+│   └── components/
+│       └── ProgressBar.jsx  # Reusable progress bar component
+└── index.html               # HTML template for Vite
+```
+
+### Frontend Components & Pages
+
+#### **1. HomePage.jsx**
+The initial landing page where users upload vault and questioned signature images.
+
+**Features:**
+- **Vault Image Upload:** Drag-and-drop or click-to-select interface for 5+ genuine reference signatures.
+- **Questioned Image Upload:** Single-file upload for the questioned/disputed signature to verify.
+- **Validation:** Enforces minimum 5 vault images and 1 questioned image before submission.
+- **Error Handling:** Displays user-friendly error messages for invalid inputs.
+- **File Types Supported:** `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`
+
+**State Variables:**
+- `vaultFiles` (File[]): Array of uploaded vault image files
+- `questionedFile` (File): Single questioned signature file
+- `error` (string): User feedback message
+- `isRunning` (boolean): Submission in progress
+
+**User Flow:**
+1. User selects ≥5 vault images (genuine reference signatures)
+2. User selects 1 questioned image (signature to verify)
+3. Clicks "Verify Signature" button
+4. Frontend validates input constraints
+5. Submits multipart/form-data to API wrapper `/analyze` endpoint
+6. Transitions to AnalysisPage on successful submission
+
+#### **2. AnalysisPage.jsx**
+Displays real-time job progress while the backend verification is running.
+
+**Features:**
+- **Real-time Progress Polling:** Fetches job status every 1000ms via `/progress/{jobId}` endpoint.
+- **Multi-stage Progress Display:**
+  - `uploading` → File upload and validation
+  - `preprocessing` → Feature extraction
+  - `embedding` → TAV-Net inference
+  - `verification` → Scoring and verdict computation
+  - `grad_cam` → Forensic Grad-CAM report generation
+  - `complete` → All stages finished
+- **Percentage Bar:** Visual progress indicator (0–100%)
+- **Detailed Status Text:** Human-readable description of current processing stage.
+- **Auto-transition:** When progress reaches 100%, automatically navigates to ResultPage.
+
+**State Variables:**
+- `progress` (object): `{stage, percent, detail, updatedAt}`
+- `activePage` (string): Current page ('home', 'analysis', 'result')
+- `isRunning` (boolean): Job still in progress
+
+**Polling Logic:**
+```javascript
+useEffect(() => {
+  if (!isRunning) return;
+  const interval = setInterval(async () => {
+    const newProgress = await fetchProgress(requestId);
+    setProgress(newProgress);
+    if (newProgress.percent >= 100) {
+      setIsRunning(false);
+      setActivePage('result');
+    }
+  }, 1000);
+  return () => clearInterval(interval);
+}, [isRunning, requestId]);
+```
+
+#### **3. ResultPage.jsx**
+Displays final verification verdict, metrics, and Grad-CAM forensic report.
+
+**Features:**
+- **Verdict Display:** Large, colour-coded banner showing `GENUINE` (green) or `FORGERY` (red).
+- **Confidence Metrics:**
+  - Z-score: Standardised decision metric (higher = more confident genuine)
+  - Centroid similarity: Cosine to mean vault embedding (0–1)
+  - Subcenter similarity: Cosine to nearest style cluster (0–1)
+  - Combined score: Weighted fusion of components (0–1)
+- **Vault Statistics:**
+  - Vault size: Number of genuine reference images used
+  - Vault mean: Average combined score of LOO vault samples
+  - Vault std: Standard deviation of LOO scores (writer signature consistency)
+  - Acceptance threshold: Computed cutoff for genuine/forgery decision
+- **Grad-CAM Forensic Report:**
+  - Embedded PNG gallery showing:
+    - Original questioned signature vs. best-matched authentic
+    - Grad-CAM heatmaps (backbone attention focus)
+    - Per-channel attribution maps (Shape, Pressure, Angle, Skeleton)
+    - Contrastive difference map (red=authentic feature, blue=anomaly)
+    - Metrics table with per-channel similarity scores
+- **Actions:**
+  - "Verify Another Signature" button returns to HomePage
+  - "Download Report" button (optional) exports full JSON results
+
+**Data Structure (from `/result/{jobId}`):**
+```json
+{
+  "checkpoint": "checkpoints/best_tavnet.pt",
+  "vault_size": 7,
+  "vault_mean": 0.732,
+  "vault_std": 0.045,
+  "acceptance_threshold": 0.687,
+  "results": [{
+    "questioned_file": "sig_001.png",
+    "centroid_sim": 0.821,
+    "subcenter_sim": 0.789,
+    "combined_score": 0.805,
+    "z_score": 2.51,
+    "verdict": "GENUINE",
+    "grad_cam_report_url": "/static/grad_cam/evidence_report_..._20260517_143022.png"
+  }]
+}
+```
+
+#### **4. ProgressBar.jsx**
+Reusable progress bar component used in AnalysisPage.
+
+**Props:**
+- `percent` (0–100): Progress percentage
+- `stage` (string): Current processing stage
+- `detail` (string): Detailed status message
+
+**Rendering:**
+- Horizontal bar with percentage label
+- Color gradient: blue → green as progress advances
+- Smooth CSS transitions for visual feedback
+
+### Frontend Installation & Development
+
+```bash
+cd frontend
+
+# Install dependencies (React 18.3, Vite 8, etc.)
+npm install
+
+# Development server (hot reload on file changes)
+npm run dev
+# Opens on http://localhost:5173
+
+# Production build
+npm run build
+# Outputs optimized files to dist/
+
+# Preview production build locally
+npm run preview
+```
+
+### UI Design Details
+
+**Color Scheme:**
+- **Verdict GENUINE:** Green (#4CAF50)
+- **Verdict FORGERY:** Red (#F44336)
+- **Progress bar:** Blue → Cyan → Green gradient
+- **Neutral backgrounds:** Light gray (#F5F5F5)
+- **Text:** Dark gray (#333)
+
+**Typography:**
+- **Headings:** Bold, large font (18–24px)
+- **Body text:** Regular, readable font (14–16px)
+- **Metrics tables:** Monospace font (12px) for numeric alignment
+
+**Layout:**
+- **Responsive design:** Mobile-first, adapts to desktop (1200px+)
+- **Spacing:** Consistent padding/margins (8px grid system)
+- **Form fields:** Full-width inputs with clear labels
+- **Image panels:** Max-width 800px, centered, with subtle shadows
+
+### API Client (api.js)
+
+Located in `frontend/src/api.js`, provides HTTP request utilities:
+
+```javascript
+// Start verification analysis
+export async function startAnalysis(vaultFiles, questionedFile) {
+  const formData = new FormData();
+  vaultFiles.forEach(f => formData.append('vault', f));
+  formData.append('questioned', questionedFile);
+  
+  const response = await fetch('http://localhost:5000/analyze', {
+    method: 'POST',
+    body: formData,
+  });
+  return response.json(); // { jobId, status }
+}
+
+// Fetch job progress
+export async function fetchProgress(jobId) {
+  const response = await fetch(`http://localhost:5000/progress/${jobId}`);
+  return response.json(); // { jobId, stage, percent, detail }
+}
+
+// Fetch final result
+export async function getResult(jobId) {
+  const response = await fetch(`http://localhost:5000/result/${jobId}`);
+  return response.json(); // { results, grad_cam_urls, metrics }
+}
+```
+
+---
+
+## 10. API Wrapper (Express.js Backend)
+
+The API wrapper is a Node.js Express server that acts as the bridge between the React frontend and Python backend ML pipeline.
+
+### Architecture
+
+```
+Frontend (React) 
+      ↓ (HTTP POST /analyze)
+API Wrapper (Node.js/Express)
+      ├─ Receive multipart form-data
+      ├─ Save uploaded files to temp directory
+      ├─ Create unique job ID
+      ├─ Spawn Python subprocess (verify_vault.py + grad_cam.py)
+      ├─ Track job progress via stdout parsing
+      └─ Serve results via /result endpoint
+      ↓ (HTTP GET /progress, /result)
+Frontend (React) polls for updates
+```
+
+### API Wrapper File Structure
+
+**Backend file:** `backend/api_wrapper.js`
+
+**Key directories:**
+- `backend/results/` — Output directory for verification results, Grad-CAM reports, and feature visualizations (served as `/static/`)
+- `backend/tmp/api_jobs/{jobId}/` — Temporary directory for uploaded files per job
+- `backend/checkpoints/best_tavnet.pt` — TAV-Net model checkpoint (loaded by Python scripts)
+
+### API Endpoints
+
+#### **1. POST /analyze**
+Initiates a new signature verification job.
+
+**Request:**
+- **Content-Type:** `multipart/form-data`
+- **Body:**
+  - `vault`: File (multiple, ≥5 required) — Genuine reference signature images
+  - `questioned`: File (single, required) — Questioned signature to verify
+
+**Response:**
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "queued",
+  "message": "Analysis job started"
+}
+```
+
+**Validation:**
+- Checks that at least 5 vault files are present
+- Checks that exactly 1 questioned file is present
+- Validates file extensions: `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`, `.npy`
+- Returns 400 error with descriptive message if validation fails
+
+**Backend process:**
+1. Generate unique `jobId` (UUID)
+2. Create directory `backend/tmp/api_jobs/{jobId}/`
+3. Save all uploaded files to job directory
+4. Set initial progress: `{jobId, stage: 'uploading', percent: 10, detail: 'Files received'}`
+5. Spawn Python subprocess:
+   ```bash
+   python verify_vault.py \
+     --vault backend/tmp/api_jobs/{jobId}/vault/ \
+     --questioned backend/tmp/api_jobs/{jobId}/questioned/ \
+     --output backend/results/verification/{jobId}.json
+   ```
+6. Parse stdout for progress updates (via custom markers in Python scripts)
+7. On Python process success, spawn Grad-CAM subprocess to generate forensic report
+8. Update job progress to `{stage: 'complete', percent: 100}`
+
+#### **2. GET /progress/:jobId**
+Fetches real-time job progress.
+
+**Response:**
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "stage": "preprocessing",
+  "percent": 35,
+  "detail": "Extracting features from vault images (3/7)",
+  "updatedAt": "2026-05-17T14:30:22.123Z"
+}
+```
+
+**Stages (in order):**
+1. `uploading` (0–15%) — File received, validation
+2. `preprocessing` (15–40%) — Feature extraction phase
+3. `embedding` (40–70%) — TAV-Net inference
+4. `verification` (70–85%) — Scoring and threshold computation
+5. `grad_cam` (85–100%) — Forensic report generation
+6. `complete` (100%) — All stages finished
+
+**Implementation:**
+- Maintains in-memory `Map<jobId, progressObject>` updated by subprocess stdout parser
+- Immediate JSON response (no blocking I/O)
+- Returns `{stage: 'idle', percent: 0}` if jobId not found (client should retry)
+
+#### **3. GET /result/:jobId**
+Retrieves final verification results and embedded image URLs.
+
+**Response:**
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "checkpoint": "checkpoints/best_tavnet.pt",
+  "vault_size": 7,
+  "vault_mean": 0.732,
+  "vault_std": 0.045,
+  "acceptance_threshold": 0.687,
+  "results": [
+    {
+      "questioned_file": "sig_001.png",
+      "centroid_sim": 0.821,
+      "subcenter_sim": 0.789,
+      "combined_score": 0.805,
+      "z_score": 2.51,
+      "verdict": "GENUINE",
+      "individual_vault_similarities": {
+        "vault_001.png": 0.854,
+        "vault_002.png": 0.791,
+        ...
+      },
+      "grad_cam_report_url": "/static/grad_cam/evidence_report_401_sig_001_20260517_143022.png"
+    }
+  ]
+}
+```
+
+**Implementation:**
+- Reads cached JSON from `backend/results/verification/{jobId}.json` (written by Python script)
+- Computes relative URLs for Grad-CAM images using `toStaticUrl()` helper
+- Returns 404 if jobId not found (job doesn't exist or is still in progress)
+
+#### **4. GET /static/*\
+Serves static files (Grad-CAM reports, visualizations) with HTTP caching.
+
+**Routes:**
+- `/static/grad_cam/*.png` → forensic explainability reports
+- `/static/cleaned_image/*.png` → preprocessing validation visualizations
+- `/static/visualize_features/*.png` → 4-channel feature panels
+
+**Express middleware:**
+```javascript
+app.use("/static", express.static(RESULTS_ROOT));
+```
+
+### Job Management System
+
+The API wrapper maintains an in-memory job queue with automatic cleanup:
+
+**Data Structure:**
+```javascript
+const jobProgress = new Map();
+// jobProgress.set(jobId, {jobId, stage, percent, detail, updatedAt})
+```
+
+**Lifecycle:**
+1. **Job Created:** Entry added to `jobProgress` when `/analyze` is POSTed
+2. **In Progress:** Updated via subprocess stdout parsing (max every 100ms)
+3. **Completed:** Progress reaches 100%, results available via `/result/{jobId}`
+4. **Cleanup:** Jobs older than 24 hours automatically removed (optional, not currently implemented)
+
+**Subprocess Spawning:**
+
+```javascript
+function runPython(scriptName, args, onStdoutLine) {
+  return new Promise((resolve, reject) => {
+    const cmd = process.env.PYTHON_BIN || "python";
+    const child = spawn(cmd, 
+      [path.join(BACKEND_ROOT, scriptName), ...args],
+      { cwd: BACKEND_ROOT, stdio: ["ignore", "pipe", "pipe"] }
+    );
+    
+    child.stdout.on("data", (chunk) => {
+      text.split(/\r?\n/).forEach((line) => {
+        if (line.trim() && onStdoutLine) onStdoutLine(line.trim());
+      });
+    });
+    
+    child.on("close", (code) => {
+      if (code !== 0) reject(...);
+      else resolve({stdout, stderr});
+    });
+  });
+}
+```
+
+**Progress Parsing:**
+
+Python backend scripts emit progress markers to stdout (JSON lines):
+
+```python
+# In Python verify_vault.py or grad_cam.py
+import json
+progress = {"stage": "preprocessing", "percent": 35, "detail": "Processing vault..."}
+print(json.dumps(progress))
+```
+
+Express captures these and updates in-memory state:
+
+```javascript
+await runPython("verify_vault.py", [...args], (line) => {
+  try {
+    const progressData = JSON.parse(line);
+    setProgress(jobId, progressData.stage, progressData.percent, progressData.detail);
+  } catch (e) {
+    // Non-JSON line, ignore
+  }
+});
+```
+
+### File Upload Handling
+
+**Multer Configuration:**
+```javascript
+const upload = multer({
+  dest: TMP_ROOT,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max per file
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ALLOWED_EXTS.has(ext)) cb(null, true);
+    else cb(new Error(`Invalid file type: ${ext}`));
+  }
+});
+
+app.post("/analyze", upload.array("vault", 100), async (req, res) => {
+  const vaultFiles = req.files.filter(f => f.fieldname === "vault");
+  const questionedFiles = req.files.filter(f => f.fieldname === "questioned");
+  
+  if (vaultFiles.length < 5) {
+    return res.status(400).json({error: "At least 5 vault files required"});
+  }
+  if (questionedFiles.length !== 1) {
+    return res.status(400).json({error: "Exactly 1 questioned file required"});
+  }
+  
+  // Organize uploaded files by jobId
+  const jobId = randomUUID();
+  const jobDir = path.join(TMP_ROOT, jobId);
+  fs.mkdirSync(jobDir, {recursive: true});
+  
+  // Move vault files
+  const vaultDir = path.join(jobDir, "vault");
+  fs.mkdirSync(vaultDir, {recursive: true});
+  vaultFiles.forEach(f => {
+    fs.renameSync(f.path, path.join(vaultDir, f.originalname));
+  });
+  
+  // Move questioned files
+  const questionedDir = path.join(jobDir, "questioned");
+  fs.mkdirSync(questionedDir, {recursive: true});
+  fs.renameSync(questionedFiles[0].path, path.join(questionedDir, questionedFiles[0].originalname));
+  
+  // Spawn verification job
+  setProgress(jobId, "uploading", 15, "Files received, starting analysis...");
+  runPython("verify_vault.py", [...args], onStdoutLine)
+    .then(...) // Spawn grad_cam.py next
+    .catch(err => setProgress(jobId, "error", 0, err.message));
+  
+  return res.json({jobId, status: "queued"});
+});
+```
+
+**Allowed file extensions:**
+- Images: `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`
+- Tensors: `.npy` (NumPy arrays from pre-extracted features)
+
+### Server Configuration
+
+**Port & Environment:**
+- Default port: `5000`
+- Override via `process.env.PORT`
+- CORS enabled for all origins (production: restrict to frontend domain)
+- Node.js version: ≥16.x recommended
+
+**Key environment variables:**
+- `PORT` — Express server port (default 5000)
+- `PYTHON_BIN` — Python executable path (default "python")
+- `NODE_ENV` — development or production
+
+**Starting the server:**
+```bash
+cd backend
+npm install  # Install Express, multer, cors, etc. (one-time)
+npm start    # Runs node api_wrapper.js
+```
+
+---
+
+## 11. Full System Installation & Deployment
 
 ### Requirements
 
@@ -687,13 +1245,99 @@ pip install -r backend/requirements.txt
 
 ---
 
-## Recent Optimizations & Improvements
+## 12. Running the Complete Stack
+
+To run the entire system (backend ML + API wrapper + frontend):
+
+```bash
+# Terminal 1 — Start Python backend API wrapper
+cd backend
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+npm install  # Install Express dependencies
+npm start    # Runs node api_wrapper.js on port 5000
+
+# Terminal 2 — Start React frontend (in parallel)
+cd frontend
+npm install
+npm run dev  # Runs Vite dev server on port 5173
+
+# Open browser
+# Navigate to http://localhost:5173
+```
+
+### Deployed Environment (Production)
+
+**Reverse Proxy Configuration (nginx):**
+```nginx
+server {
+    listen 80;
+    server_name signaturevault.example.com;
+
+    # Frontend (React static files)
+    location / {
+        root /var/www/signaturevault/frontend/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API backend (Express.js)
+    location /api/ {
+        proxy_pass http://localhost:5000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_request_buffering off;  # Important for long-running jobs
+    }
+
+    # Static results (Grad-CAM images, visualizations)
+    location /static/ {
+        alias /var/signaturevault/backend/results/;
+        expires 1h;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**Docker setup (optional):**
+```dockerfile
+# Backend Dockerfile
+FROM python:3.11-slim
+RUN apt-get update && apt-get install -y nodejs npm
+WORKDIR /app/backend
+COPY backend/requirements.txt .
+RUN pip install -r requirements.txt
+COPY backend . .
+EXPOSE 5000
+CMD ["npm", "start"]
+
+# Frontend Dockerfile
+FROM node:18-alpine AS build
+WORKDIR /app/frontend
+COPY frontend/package.json .
+RUN npm install
+COPY frontend . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
+EXPOSE 80
+```
+
+**GPU Acceleration (on-premise deployment):**
+- Use NVIDIA Docker runtime: `docker run --gpus all ...`
+- Feature extraction speedup: 5–10× with GPU (384×384 tensors)
+- Batch inference: Process multiple vault images in parallel
+
+---
+
+## 13. Backend Configuration Reference
+
+### 14. Recent Optimizations & Improvements
 
 This section documents the system-level improvements made to maximise accuracy and stability:
-
-### Training Improvements
-
-**1. Augmentation Tuning**
 - **Gentler geometric transforms:** Rotation 10° (p=0.5), scale 0.9-1.1, shear 5° to preserve biometric integrity
 - **Reduced occlusion:** Random erasing p=0.2, elastic deformation p=0.2
 - **Removed channel dropout:** All 4 channels (Shape, Pressure, Angle, Skeleton) are now preserved during training to maintain complementary biometric signals
@@ -775,7 +1419,7 @@ All optimizations are integrated into the default pipeline:
 
 ---
 
-## 11. Quick Start
+## 15. Quick Start Guide
 
 ```bash
 cd backend
@@ -876,7 +1520,7 @@ python grad_cam.py --sample-dir sample_check
 
 ---
 
-## 13. Output Files
+## 16. Output Files & Results
 
 | File | Produced by | Description |
 |------|-------------|-------------|
@@ -895,7 +1539,7 @@ python grad_cam.py --sample-dir sample_check
 
 ---
 
-## 14. Dependencies
+## 17. Dependencies & Requirements
 
 Full pinned dependency list in `backend/requirements.txt`. Core ML stack:
 
@@ -915,5 +1559,3 @@ tqdm
 ```
 
 ---
-
-*SignatureVault — Offline Signature Verification via TAV-Net (ResNet-50 + CBAM + Transformer)*

@@ -1,33 +1,34 @@
+# -*- coding: cp1252 -*-
 """
-grad_cam.py — Forensic-Grade XAI Visualizations for TAV-Net
+grad_cam.py ï¿½ Forensic-Grade XAI Visualizations for TAV-Net
 ==================================================================
 
 Generates evidence-quality explainability reports for the TAV-Net
 Siamese-Transformer signature verification model.
 
 Visualization pipeline
-1. Grad-CAM at model.layer4          — spatial decision map (7×7 ? 224×224)
-2. Per-channel Attribution Maps      — ?sim/?input_c × input_c  for each of
+1. Grad-CAM at model.layer4          ï¿½ spatial decision map (7ï¿½7 ? 224ï¿½224)
+2. Per-channel Attribution Maps      ï¿½ ?sim/?input_c ï¿½ input_c  for each of
                                        the 4 signature channels (Shape, Pressure,
                                        Angle, Skeleton)
-3. Contrastive ?-Map                 — vault-centroid heatmap minus questioned
+3. Contrastive ?-Map                 ï¿½ vault-centroid heatmap minus questioned
                                        heatmap; red = vault feature, blue = spurious
-4. Transformer Attention Rollout     — propagated multi-head attention collapsed
-                                       onto the 7×7 token spatial grid
+4. Transformer Attention Rollout     ï¿½ propagated multi-head attention collapsed
+                                       onto the 7ï¿½7 token spatial grid
 
-Evidence report layout (22 × 18 in @ 200 dpi ˜ 4400 × 3600 px)
-  [Banner — writer ID, similarity score, overall verdict]
+Evidence report layout (22 ï¿½ 18 in @ 200 dpi ï¿½ 4400 ï¿½ 3600 px)
+  [Banner ï¿½ writer ID, similarity score, overall verdict]
   Row 0 : Questioned (raw) | Questioned + Grad-CAM | Vault + Grad-CAM | ?-Map
   Row 1 : Ch-0 Shape       | Ch-1 Pressure         | Ch-2 Angle       | Ch-3 Skeleton
   Row 2 : Attention Rollout (left 2 cols)  |  Salience Score Table (right 2 cols)
 
 Supported dataset UID ranges (from unify_dataset.py manifest)
-  UID   1 –  400  : BHSig-Bengali / CEDAR / GPDS          (Latin / Bengali)
-  UID 401 –  500  : BHSig-Bengali                         (Bengali)
-  UID 501 –  600  : BHSig-Hindi                           (Hindi)
-  UID 601 –  800  : GPDS (extended)                       (Latin)
-  UID 801 –  869  : ICDAR-2011  (flat {id}/{id}_forg)    (Latin)
-  UID 1001 – 1223 : Independent dataset                   (Latin)
+  UID   1 ï¿½  400  : BHSig-Bengali / CEDAR / GPDS          (Latin / Bengali)
+  UID 401 ï¿½  500  : BHSig-Bengali                         (Bengali)
+  UID 501 ï¿½  600  : BHSig-Hindi                           (Hindi)
+  UID 601 ï¿½  800  : GPDS (extended)                       (Latin)
+  UID 801 ï¿½  869  : ICDAR-2011  (flat {id}/{id}_forg)    (Latin)
+  UID 1001 ï¿½ 1223 : Independent dataset                   (Latin)
 
 Usage
   # Compare first forgery for writer 401 against their vault centroid
@@ -58,7 +59,7 @@ from pathlib import Path
 from typing import Optional
 
 import matplotlib
-matplotlib.use("Agg")   # headless rendering — must precede pyplot import
+matplotlib.use("Agg")   # headless rendering ï¿½ must precede pyplot import
 
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -88,19 +89,27 @@ _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp"}
 # class/function definitions are executed on import.
 
 try:
-    from backend.train_tavnet import (   # noqa: E402
+    from train_tavnet import (   # noqa: E402
         TAVNet,
         CBAM,
         ChannelAttention,
         SpatialAttention,
     )
-except ImportError as _err:
-    sys.exit(
-        "[ERROR] Cannot import model from train_tavnet.py.\n"
-        "        Run this script from the backend/ directory:\n"
-        f"            python grad_cam.py --writer-id <ID>\n"
-        f"        Import error: {_err}"
-    )
+except ImportError:
+    try:
+        from backend.train_tavnet import (   # noqa: E402
+            TAVNet,
+            CBAM,
+            ChannelAttention,
+            SpatialAttention,
+        )
+    except ImportError as _err:
+        sys.exit(
+            "[ERROR] Cannot import model from train_tavnet.py.\n"
+            "        Run this script from the backend/ directory:\n"
+            f"            python grad_cam.py --writer-id <ID>\n"
+            f"        Import error: {_err}"
+        )
 
 # Lazy import of the feature-extraction pipeline (only needed when processing
 # raw images rather than pre-built .npy tensors).
@@ -110,7 +119,7 @@ try:
 except ImportError:
     _HAS_EXTRACTOR = False
 
-# Scoring helpers — imported from verify_vault for parity with the verifier.
+# Scoring helpers ï¿½ imported from verify_vault for parity with the verifier.
 # Inline fallbacks are provided so grad_cam.py can run standalone.
 try:
     from verify_vault import (
@@ -203,7 +212,7 @@ class GradCAM:
     Grad-CAM for TAV-Net, targeting model.layer4.
 
     Registers forward + backward hooks on the target layer.  After a
-    forward+backward pass the 7×7 weighted activation map is accessible
+    forward+backward pass the 7ï¿½7 weighted activation map is accessible
     via .heatmap().
 
     Usage
@@ -248,7 +257,7 @@ class GradCAM:
             raise RuntimeError(
                 "Call forward() followed by backward() before calling heatmap()."
             )
-        # (B, C) — importance weights for each activation channel
+        # (B, C) ï¿½ importance weights for each activation channel
         weights = self._gradients.mean(dim=(2, 3))          # GAP over (H, W)
         # Weighted sum of feature maps ? (B, H, W)
         cam = (weights[:, :, None, None] * self._activations).sum(dim=1)
@@ -321,7 +330,7 @@ class AttentionRollout:
                     attn_mask=attn_mask,
                     key_padding_mask=key_padding_mask,
                     need_weights=True,
-                    average_attn_weights=True,   # (B, S, S) — averaged over heads
+                    average_attn_weights=True,   # (B, S, S) ï¿½ averaged over heads
                     is_causal=is_causal,
                 )
                 if w is not None:
@@ -353,7 +362,7 @@ class AttentionRollout:
         rollout = eye.unsqueeze(0)                  # (1, S, S)
 
         for a in self._weights:
-            # a: (B, S, S) — already head-averaged by average_attn_weights=True
+            # a: (B, S, S) ï¿½ already head-averaged by average_attn_weights=True
             a_aug  = 0.5 * a + 0.5 * eye.unsqueeze(0)
             # Re-normalise each row so it sums to 1
             a_aug  = a_aug / a_aug.sum(dim=-1, keepdim=True).clamp(min=1e-8)
@@ -396,7 +405,7 @@ def _load_npy(path: str | Path) -> torch.Tensor:
 
 def _load_image_as_tensor(path: Path) -> torch.Tensor:
     """
-    Process a raw signature image (PNG / JPG / TIFF / BMP / …) through the
+    Process a raw signature image (PNG / JPG / TIFF / BMP / ï¿½) through the
     full 4-channel feature-extraction pipeline from extract_features.py.
 
     Pipeline:
@@ -552,23 +561,23 @@ def compute_centroid(
 
 
 # -----------------------------------------------------------------------------
-# Per-channel attribution: Gradient × Input
+# Per-channel attribution: Gradient ï¿½ Input
 # -----------------------------------------------------------------------------
 
 def channel_attribution_maps(
     model:      TAVNet,
-    tensor:     torch.Tensor,    # (4, 224, 224) float32 on device — will grad
+    tensor:     torch.Tensor,    # (4, 224, 224) float32 on device ï¿½ will grad
     target_emb: torch.Tensor,    # (D,) centroid or comparison embedding on CPU
 ) -> list[np.ndarray]:
     """
-    Compute per-channel Gradient × Input saliency maps.
+    Compute per-channel Gradient ï¿½ Input saliency maps.
 
     For each channel c:
         saliency_c = |?(cosine_similarity) / ?input_c| ? |input_c|
 
     All 4 channels are differentiated in a single backward pass.
 
-    Returns: list of 4 × (384, 384) float32 arrays in [0, 1].
+    Returns: list of 4 ï¿½ (384, 384) float32 arrays in [0, 1].
     """
     model.eval()
     x = tensor.unsqueeze(0).detach().requires_grad_(True)   # (1, 4, 384, 384)
@@ -621,8 +630,8 @@ def salience_scores(
     """
     Compute a numeric per-channel 'Salience Score'.
 
-        raw_score  = mean activation in the top-20% of pixels (Grad×Input)
-        conf_score = raw_score × max(cosine_similarity, 0)
+        raw_score  = mean activation in the top-20% of pixels (Gradï¿½Input)
+        conf_score = raw_score ï¿½ max(cosine_similarity, 0)
 
     Activation strength labels (based on raw_score percentile across channels):
         raw = p67 of channel raws ? HIGH
@@ -670,8 +679,8 @@ def _upsample_np(arr: np.ndarray, size: int = 384) -> np.ndarray:
 
 
 def _overlay(
-    base:    np.ndarray,   # (H, W) float32 [0, 1] — grayscale background
-    heatmap: np.ndarray,   # (H, W) float32 [0, 1] — saliency
+    base:    np.ndarray,   # (H, W) float32 [0, 1] ï¿½ grayscale background
+    heatmap: np.ndarray,   # (H, W) float32 [0, 1] ï¿½ saliency
     cmap:    str  = "jet",
     alpha:   float = 0.55,
 ) -> np.ndarray:
@@ -811,12 +820,12 @@ def generate_evidence_report(
     1. Load questioned tensor.
     2. Compute vault centroid, sub-centers, and LOO calibration stats.
     3. Compute questioned embedding, 4-component score, and Z-score verdict.
-    4. Grad-CAM (questioned)       — differentiating cosine similarity.
-    5. Grad-CAM (vault mean)       — average over up to max_vault genuine samples.
-    6. Contrastive ?-Map           — vault - questioned heatmap.
-    7. Per-channel attribution     — Grad × Input for each of 4 channels.
-    8. Attention Rollout           — Transformer token-level context map.
-    9. Salience scores             — numeric confidence per channel.
+    4. Grad-CAM (questioned)       ï¿½ differentiating cosine similarity.
+    5. Grad-CAM (vault mean)       ï¿½ average over up to max_vault genuine samples.
+    6. Contrastive ?-Map           ï¿½ vault - questioned heatmap.
+    7. Per-channel attribution     ï¿½ Grad ï¿½ Input for each of 4 channels.
+    8. Attention Rollout           ï¿½ Transformer token-level context map.
+    9. Salience scores             ï¿½ numeric confidence per channel.
     10. Compose + save figure.
 
     Parameters
@@ -836,10 +845,10 @@ def generate_evidence_report(
     # -- 1. Load questioned tensor ---------------------------------------------
     log.debug("Loading questioned signature: %s", questioned_path.name)
     q_tensor = _load_file(questioned_path)         # (4, 384, 384) CPU float32
-    q_base   = q_tensor[0].numpy()                 # Shape channel — grayscale base
+    q_base   = q_tensor[0].numpy()                 # Shape channel ï¿½ grayscale base
 
     # -- 2. Vault embeddings, centroid, sub-centers, and LOO calibration --------
-    log.debug("Computing vault embeddings from %d genuine samples …", len(genuine_paths))
+    log.debug("Computing vault embeddings from %d genuine samples ï¿½", len(genuine_paths))
     _vault_embs: list[torch.Tensor] = []
     with torch.no_grad():
         for _vp in genuine_paths:
@@ -863,7 +872,7 @@ def generate_evidence_report(
         _loo_scores.append(_sc)
     vault_mean = float(np.mean(_loo_scores))    if _loo_scores          else 0.70
     vault_std  = float(np.std(_loo_scores))     if len(_loo_scores) > 1 else 0.05
-    log.debug("  Vault LOO — mean: %.4f  std: %.4f  (%d scores)",
+    log.debug("  Vault LOO ï¿½ mean: %.4f  std: %.4f  (%d scores)",
              vault_mean, vault_std, len(_loo_scores))
 
     # -- 3. Questioned embedding, 4-component score, and Z-score verdict --------
@@ -872,7 +881,7 @@ def generate_evidence_report(
     combined, centroid_sim, subcenter_sim = _compute_combined(
         q_emb, centroid, subcenters, _named_embs, DEFAULT_WEIGHTS
     )
-    cos_sim = centroid_sim   # centroid similarity — used as the visual reference throughout
+    cos_sim = centroid_sim   # centroid similarity ï¿½ used as the visual reference throughout
     z_score = (combined - vault_mean) / max(vault_std, 0.01)
     log.debug("  Centroid: %.4f  Sub-center: %.4f",
              centroid_sim, subcenter_sim)
@@ -894,7 +903,7 @@ def generate_evidence_report(
     best_genuine_tensor = _load_file(best_genuine_path).to(device)
 
     # -- 4. Grad-CAM: questioned signature -------------------------------------
-    log.debug("Computing Grad-CAM for questioned signature …")
+    log.debug("Computing Grad-CAM for questioned signature ï¿½")
     hmap_q = run_gradcam(model, q_tensor.to(device), centroid)   # (384, 384)
 
     # -- 5. Grad-CAM: best-matched genuine -------------------------------------
@@ -907,9 +916,9 @@ def generate_evidence_report(
     diff_norm = (diff_map + 1.0) / 2.0             # ? [0, 1] for RdBu_r cmap
 
     # -- 7. Per-channel attribution maps ---------------------------------------
-    log.debug("Computing per-channel Gradient × Input attribution maps …")
+    log.debug("Computing per-channel Gradient ï¿½ Input attribution maps ï¿½")
     q_dev    = q_tensor.to(device)
-    ch_maps  = channel_attribution_maps(model, q_dev, centroid)  # 4 × (384,384)
+    ch_maps  = channel_attribution_maps(model, q_dev, centroid)  # 4 ï¿½ (384,384)
 
     # -- 8. Attention Rollout --------------------------------------------------
     # Note: rollout_grid not used in simplified report, skipping
@@ -918,7 +927,7 @@ def generate_evidence_report(
     scores = salience_scores(ch_maps, cos_sim)
 
     # -- 10. Compose figure with 3-row layout -------------------------------------
-    log.debug("Composing 3-row comparison report …")
+    log.debug("Composing 3-row comparison report ï¿½")
     _BG  = "#FFFFFF"  # white background for professional presentation
     
     # Create 3x2 grid: top 2 rows are images (2 cols each), bottom row is analysis (4 panels)
@@ -1210,7 +1219,7 @@ def generate_evidence_report(
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
-            "grad_cam.py — Forensic XAI report for TAV-Net"
+            "grad_cam.py ï¿½ Forensic XAI report for TAV-Net"
             "(Grad-CAM + per-channel attribution + Attention Rollout).\n"
             "\n"
             "Two modes:\n"
@@ -1311,7 +1320,7 @@ def main() -> None:
         device = torch.device("cuda")
 
     # -------------------------------------------------------------------------
-    # Mode 1 — --sample-dir: vault/ + questioned/ subfolders with raw files
+    # Mode 1 ï¿½ --sample-dir: vault/ + questioned/ subfolders with raw files
     # -------------------------------------------------------------------------
     if args.sample_dir:
         sample_root = Path(args.sample_dir)
@@ -1367,7 +1376,7 @@ def main() -> None:
         return   # ? end of sample-dir mode
 
     # -------------------------------------------------------------------------
-    # Mode 2 — --writer-id: scan processed .npy directory
+    # Mode 2 ï¿½ --writer-id: scan processed .npy directory
     # -------------------------------------------------------------------------
     writer_id = args.writer_id  # guaranteed non-None by arg validation above
 
@@ -1384,7 +1393,7 @@ def main() -> None:
         )
         sys.exit(1)
     log.info(
-        "Writer %d — %d genuine, %d forgery samples found.",
+        "Writer %d ï¿½ %d genuine, %d forgery samples found.",
         writer_id, len(paths["G"]), len(paths["F"]),
     )
 
